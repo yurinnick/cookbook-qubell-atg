@@ -1,0 +1,23 @@
+from weblogic.descriptor import BeanAlreadyExistsException
+
+connect('<%= node[:atg][:weblogic][:username] %>','<%= node[:atg][:weblogic][:password] %>','t3://<%= node[:atg][:weblogic][:domain_name] %>:<%= node[:atg][:weblogic][:port] %>')
+
+<% [:publishing, :production].each do |instance_name| %>
+edit()
+startEdit()
+
+cd('/')
+try:
+    cmo.createServer('<%= node[:atg][instance_name][:instance] %>')
+except BeanAlreadyExistsException:
+    print "Server <%= node[:atg][instance_name][:instance] %> already exists!"
+
+cd('/Servers/<%= node[:atg][instance_name][:instance] %>')
+cmo.setListenAddress('')
+cmo.setListenPort(<%= node[:atg][instance_name][:ports][:http] %>)
+
+activate()
+<% end %>
+
+disconnect()
+exit()

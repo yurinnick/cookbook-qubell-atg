@@ -4,10 +4,10 @@
 
 include_recipe "atg::default"
 
-cim_batch_file_name = "atg_endeca.cim"
+cim_batch_file_name = "demoware_setup.cim"
 
 template "#{node[:atg][:config_dir]}/#{cim_batch_file_name}" do
-    source "cim/crs_with_endeca_search.erb"
+    source "cim/demoware_setup.cim.erb"
     owner "root"
     group "root"
     mode 00644

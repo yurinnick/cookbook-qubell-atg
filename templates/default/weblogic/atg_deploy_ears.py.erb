@@ -1,0 +1,12 @@
+connect('<%= node[:atg][:weblogic][:username] %>','<%= node[:atg][:weblogic][:password] %>','t3://<%= node[:atg][:weblogic][:domain_name] %>:<%= node[:atg][:weblogic][:port] %>')
+
+<% [:publishing, :production].each do |instance_name| %>
+
+deploy('<%= node[:atg][instance_name][:instance] %>.ear', '<%= node[:atg][instance_name][:ear_path] %>', targets='<%= node[:atg][instance_name][:instance] %>')
+
+startApplication('<%= node[:atg][instance_name][:instance] %>.ear')
+
+<% end %>
+
+disconnect()
+exit()

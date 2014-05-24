@@ -1,11 +1,15 @@
-cookbook_file "#{node[:atg][:tmp_dir]}/atg_deploy_publishing.py" do
+#
+# Copyright 2014, Grid Dynamics International, Inc.
+#
+
+cookbook_file "#{node[:atg][:wlst_dir]}/atg_deploy_publishing.py" do
 	source "atg_deploy_publishing.py"
 	owner "root"
 	group "root"
 	mode "0644"
 end
 
-cookbook_file "#{node[:atg][:tmp_dir]}/deploymentTopology.xml" do
+cookbook_file "#{node[:atg][:config_dir]}/deploymentTopology.xml" do
 	source "deploymentTopology.xml"
 	action :create
 	owner "root"
@@ -21,11 +25,11 @@ end
 end
 
 execute "Running ATG BCC publishing server deployment" do
-    command "python #{node[:atg][:tmp_dir]}/atg_deploy_publishing.py \
+    command "python #{node[:atg][:wlst_dir]}/atg_deploy_publishing.py \
     -host localhost -port #{node[:atg][:publishing][:ports][:http]} \
     -user admin \
     -pass #{node[:atg][:admin_password]} \
-    -f #{node[:atg][:tmp_dir]}/deploymentTopology.xml > #{node[:atg][:log_dir]}/atg_deploy_publishing.log"
+    -f #{node[:atg][:config_dir]}/deploymentTopology.xml > #{node[:atg][:log_dir]}/atg_deploy_publishing.log"
     action :run
 end
 

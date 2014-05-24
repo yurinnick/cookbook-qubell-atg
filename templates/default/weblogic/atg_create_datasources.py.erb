@@ -1,0 +1,88 @@
+from weblogic.descriptor import BeanAlreadyExistsException
+
+connect('<%= node[:atg][:weblogic][:username] %>','<%= node[:atg][:weblogic][:password] %>','t3://<%= node[:atg][:weblogic][:domain_name] %>:<%= node[:atg][:weblogic][:port] %>')
+
+<% [:publishing, :production].each do |instance_name| %>
+edit()
+startEdit()
+
+# Create JDBC System Resource
+# ---------------------------
+cd('/')
+try:
+    cmo.createJDBCSystemResource('<%= node[:atg][instance_name][:db][:jdni_name] %>')
+except BeanAlreadyExistsException:
+    print "<%= node[:atg][instance_name][:db][:jdni_name] %> already exists!"
+
+# Set name of resource
+# --------------------
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+cmo.setName('<%= node[:atg][instance_name][:db][:jdni_name] %>')
+
+# Set JNDI names
+# --------------
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCDataSourceParams/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+set('JNDINames',jarray.array(["<%= node[:atg][instance_name][:db][:jdni_name] %>"], String))
+
+# Set JDBC connection
+# -------------------
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCDriverParams/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+cmo.setUrl('jdbc:oracle:thin:@<%= node[:atg][instance_name][:db][:hostname] %>:<%= node[:atg][instance_name][:db][:port] %>:<%= node[:atg][instance_name][:db][:db_name] %>')
+cmo.setDriverName('oracle.jdbc.xa.client.OracleXADataSource')
+
+# WARNING: Plain text password
+# ----------------------------
+cmo.setPassword('<%= node[:atg][instance_name][:db][:password] %>')
+
+# Test DB connection
+# ------------------
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCConnectionPoolParams/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+cmo.setTestTableName('SQL SELECT 1 FROM DUAL\r\n\r\n')
+
+# Set user property
+# ------------------------------
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCDriverParams/<%= node[:atg][instance_name][:db][:jdni_name] %>/Properties/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+try:
+    cmo.createProperty('user')
+except BeanAlreadyExistsException:
+    print "Property 'user' already exist in <%= node[:atg][instance_name][:db][:jdni_name] %>"
+
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCDriverParams/<%= node[:atg][instance_name][:db][:jdni_name] %>/Properties/<%= node[:atg][instance_name][:db][:jdni_name] %>/Properties/user')
+cmo.setValue('<%= node[:atg][instance_name][:db][:username] %>')
+
+# Set DatabaseName property
+# -------------------------
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCDriverParams/<%= node[:atg][instance_name][:db][:jdni_name] %>/Properties/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+try:
+    cmo.createProperty('DatabaseName')
+except BeanAlreadyExistsException:
+    print "Property 'DatabaseName' already exist in <%= node[:atg][instance_name][:db][:jdni_name] %>"
+
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCDriverParams/<%= node[:atg][instance_name][:db][:jdni_name] %>/Properties/<%= node[:atg][instance_name][:db][:jdni_name] %>/Properties/DatabaseName')
+cmo.setValue('jdbc:oracle:thin:@<%= node[:atg][instance_name][:db][:hostname] %>:<%= node[:atg][instance_name][:db][:port] %>:<%= node[:atg][instance_name][:db][:db_name] %>')
+
+# Some sort of configuration magic
+# --------------------------------
+cd('/JDBCSystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCResource/<%= node[:atg][instance_name][:db][:jdni_name] %>/JDBCDataSourceParams/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+try:
+    cmo.setGlobalTransactionsProtocol('TwoPhaseCommit')
+except Exception:
+    print "Something goes wrong!"
+
+# Bind DataSource to Server
+# -------------------------
+cd('/SystemResources/<%= node[:atg][instance_name][:db][:jdni_name] %>')
+try:
+    set('Targets',jarray.array([ObjectName('com.bea:Name=<%= node[:atg][instance_name][:instance] %>,Type=Server')], ObjectName))
+    <% if instance_name.eql? :production %>
+    set('Targets',jarray.array([ObjectName('com.bea:Name=<%= node[:atg][:production][:instance] %>,Type=Server'), ObjectName('com.bea:Name=<%= node[:atg][:publishing][:instance] %>,Type=Server')], ObjectName))
+    <% end %>
+except Exception:
+    print "Something goes wrong!"
+
+activate()
+
+<% end %>
+
+disconnect()
+exit()

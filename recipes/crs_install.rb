@@ -1,6 +1,10 @@
+#
+# Copyright 2014, Grid Dynamics International, Inc.
+#
+
 include_recipe "atg::default"
 
-remote_file "#{node[:atg][:tmp_dir]}/crs.bin" do
+remote_file "#{node[:atg][:binaries_dir]}/crs.bin" do
 	action :create_if_missing
 	owner "root"
 	group "root"
@@ -9,7 +13,7 @@ remote_file "#{node[:atg][:tmp_dir]}/crs.bin" do
 	checksum "sha256checksum"
 end
 
-template "#{node[:atg][:tmp_dir]}/crs_installation.properties" do
+template "#{node[:atg][:config_dir]}/crs_installation.properties" do
 	source "installation/crs.properties.erb"
 	owner "root"
 	group "root"
@@ -17,7 +21,7 @@ template "#{node[:atg][:tmp_dir]}/crs_installation.properties" do
 end
 
 execute "Installing Commerce Reference Store" do
-	command "#{node[:atg][:tmp_dir]}/crs.bin -f #{node[:atg][:tmp_dir]}/crs_installation.properties -i silent"
+	command "#{node[:atg][:binaries_dir]}/crs.bin -f #{node[:atg][:config_dir]}/crs_installation.properties -i silent"
 	not_if { File.directory?("#{node[:atg][:installation_dir]}/CRS") }
 	action :run
 end

@@ -1,3 +1,7 @@
+#
+# Copyright 2014, Grid Dynamics International, Inc.
+#
+
 include_recipe "atg::default"
 
 directory "#{node[:atg][:installation_dir]}/CommerceReferenceStore/Store" do
